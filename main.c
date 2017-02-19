@@ -4,7 +4,7 @@
  */
 
 // CONFIG1
-#pragma config FOSC = HS        // Oscillator Selection bits (HS oscillator: High-speed crystal/resonator on RA6/OSC2/CLKOUT and RA7/OSC1/CLKIN)
+#pragma config FOSC = INTRC_NOCLKOUT// Oscillator Selection bits (INTOSCIO oscillator: I/O function on RA6/OSC2/CLKOUT pin, I/O function on RA7/OSC1/CLKIN)
 #pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled and can be enabled by SWDTEN bit of the WDTCON register)
 #pragma config PWRTE = OFF      // Power-up Timer Enable bit (PWRT disabled)
 #pragma config MCLRE = ON       // RE3/MCLR pin function select bit (RE3/MCLR pin function is MCLR)
@@ -24,5 +24,10 @@
 #include "oled.h"
 
 void main(void) {
-    return;
+  ANSEL = 0x0;
+  ANSELH = 0x0;
+  oled_init();
+  oled_outs("Hello World");
+  while(1);
+  return;
 }
