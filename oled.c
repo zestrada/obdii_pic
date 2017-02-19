@@ -29,6 +29,7 @@
 #define CMD            0           
 #define DATA           1       
 
+
 /*Assuming 4MHz internal clock this will yield a timer 0 tick of 4us*/
 void timer0_init() {
   T0CS = 0;
@@ -81,7 +82,6 @@ void oled_4bits(char data) {
   DB_PINS = (DB_PINS&0xF0)|((data>>4)&0x0F);
   delay_50us();
   oled_pulse();
-  oled_checkbusy();
 }
 
 /*Send a command or data, split up for 8 bits*/
@@ -99,7 +99,7 @@ void oled_send(char mode, char output) {
 
 void oled_clear(void) {
   oled_send(CMD, CLRDISPLAY);
-  delay_ms(2);
+  delay_ms(3);
 }
 
 /* Write one character to the LCD */
@@ -137,26 +137,24 @@ void oled_init() {
   TRISE0 = 0;
   TRISE1 = 0;
   TRISE2 = 0;
-  DB_PINS = DB_PINS&0xF0;//zero out data pins
-  timer0_init();
-  RS = CMD;
   EN = 0;
-  delay_ms(100);
+  RW = 0;
+  RS = CMD;
+  DB_PINS = DB_PINS&0xF0;//zero out data pins
+
+  timer0_init();
+  delay_ms(100); //Wait for power to stabilize
 
   /* 4-bit initialization sequence from datasheet */
   oled_4bits(2); //Set 4-bit mode
   delay_ms(5);
   oled_send(CMD, FUNCSET);
   delay_ms(5);
-  oled_checkbusy();
 
   oled_send(CMD, DISPSET);
   delay_ms(5);
-  oled_checkbusy();
 
   oled_clear();
-  oled_checkbusy();
 
   oled_send(CMD, ENTRYMODE);
-  oled_checkbusy();
 }

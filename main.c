@@ -22,15 +22,45 @@
 
 #include <xc.h>
 #include "oled.h"
+#include "elm327.h"
 
+/*Note: you need to wait at least 100msec between commands*/
 void main(void) {
   ANSEL = 0x0;
   ANSELH = 0x0;
   oled_init();
-  oled_cursor(0);
-  oled_outs("LINE 1 WORKING");
-  oled_cursor(0x40);
-  oled_outs("LINE 2 WORKING");
-  while(1);
+  oled_init(); //HACK for cold boots
+  oled_clear();
+  elm327_init();
+  while(1) {
+    oled_clear();
+    oled_home();
+    oled_outs("Resetting...");
+    oled_cursor(OLED_ROW2);
+    elm_reset();
+    delay_ms(100);
+    output_buffer();
+    delay_ms(1000);
+
+    oled_clear();
+    oled_home();
+    oled_outs("Connecting...");
+    oled_cursor(OLED_ROW2);
+    obd_connect();
+    output_buffer();
+    oled_clear();
+    oled_home();
+    output_buffer();
+
+    /*FIXME: get another command working, my car doesn't support VIN*/
+    oled_clear();
+    oled_home();
+    oled_outs("Reading VIN...");
+    elm_vin();
+    oled_cursor(OLED_ROW2);
+    delay_ms(100);
+    output_buffer();
+    delay_ms(1000);
+  }
   return;
 }
