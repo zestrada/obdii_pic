@@ -33,6 +33,8 @@ void main(void) {
   oled_clear();
   elm327_init();
   while(1) {
+    oled_scroll_line2("Testing 1... 2... 3...");
+    /*
     oled_clear();
     oled_home();
     oled_outs("Resetting...");
@@ -52,7 +54,7 @@ void main(void) {
     oled_home();
     output_buffer();
 
-    /*FIXME: get another command working, my car doesn't support VIN*/
+    //FIXME: get another command working, my car doesn't support VIN
     oled_clear();
     oled_home();
     oled_outs("Reading VIN...");
@@ -61,6 +63,12 @@ void main(void) {
     delay_ms(100);
     output_buffer();
     delay_ms(1000);
+    */
   }
   return;
+}
+
+void interrupt interrupt_handler(void) {
+  handle_elm_interrupt();
+  handle_oled_interrupt();
 }

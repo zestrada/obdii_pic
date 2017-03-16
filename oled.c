@@ -1,10 +1,15 @@
+/*
+ * Uses: Timer0 (strobe delays, etc...), Timer1 (message scrolling)
+ */
 // Created by Hi-Tech Software modified for SparkFun Character OLED
 // https://github.com/technobly/Adafruit_CharacterOLED/blob/master/Adafruit_CharacterOLED.cpp
 // https://www.sparkfun.com/products/11987
 // Datasheet:
 // http://www.winstar.com.tw/products/oled-module/oled-character-display/weh001602b.html
+//
 
 #include	<xc.h>
+#include "oled.h"
 
 /*Configuration Settings*/
 #define CLRDISPLAY     0x01    //clear display: clear, move cursor home
@@ -29,6 +34,10 @@
 #define CMD            0           
 #define DATA           1       
 
+/*Support for scrolling messages*/
+char msg_scrolling = 0;//1 if a message is currently scrolling
+char scroll_pos; //Position of the scrolling message in the string
+char scroll_null; //Position of the NULL character in the scrolling message
 
 /*Assuming 4MHz internal clock this will yield a timer 0 tick of 4us*/
 void timer0_init() {
@@ -37,6 +46,16 @@ void timer0_init() {
   PS0 =  1;
   PS1 =  0;
   PS2 =  0;
+}
+
+/*Assuming 4MHz internal clock, each timer1 tick should be 8us, a full countup
+ *of Timer1 would result in roughly a 0.5 second delay
+ */
+void timer1_init() {
+    TMR1GE = 0; TMR1ON = 1; TMR1CS = 0; //Enable Timer1, use internal clock
+    T1CKPS1 = 1; T1CKPS0 = 1;
+    TMR1IF = 0; TMR1 = 0;
+    PEIE = 1; GIE = 1; //Just in case this is not done elsewhere
 }
 
 /*Since we have 4us per tick, we need 250 ticks for a ms, start TMR0 at 6*/
@@ -143,6 +162,7 @@ void oled_init() {
   DB_PINS = DB_PINS&0xF0;//zero out data pins
 
   timer0_init();
+  timer1_init();
   delay_ms(100); //Wait for power to stabilize
 
   /* 4-bit initialization sequence from datasheet */
@@ -157,4 +177,41 @@ void oled_init() {
   oled_clear();
 
   oled_send(CMD, ENTRYMODE);
+}
+
+/*If a string is less than 16 characters, display it, if it is longer, scroll
+ * it across
+ * TODO: Make this interrupt driven? Might need to combine with main since only
+ * one handler
+ */
+void oled_scroll_line2(const char *s) {
+  char lineout[17], i;
+  oled_cursor(OLED_ROW2);
+
+  //Check to see if the message fits within 16 chars, no need to scroll
+  for(i=0; i<32; i++) {
+    if(s[i]==NULL) {
+      scroll_null=i;
+    }
+  }
+
+  //Bail if the message is small enough
+  if(scroll_null<=NUMCOLS) {
+    oled_outs(s);
+    return;
+  }
+
+  //If we need to scroll
+  TMR1IE=1;
+  lineout[16] = NULL;
+}
+
+void oled_stop_scroll_line2(void) {
+  msg_scrolling = 0;
+  TMR1IE = 0;//Disable timer1 interrupt
+}
+
+void handle_oled_interrupt(void) {
+  if(msg_scrolling) {
+  }
 }

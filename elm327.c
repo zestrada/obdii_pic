@@ -1,17 +1,15 @@
+/*
+ * Uses: ESUART
+ */
 #define BAUD_N 103 //9600
 //#define BAUD_N 25 //38400 (or 26, depending on drift)
 
 //Use delay functions
 #include <xc.h>
 #include "oled.h"
+#include "elm327.h"
 
-//All commands must end with CR, can also be used to repeat commands
-#define END_CMD() uart_outc(0x0D)
-#define END_CHAR 0x3E //The ELM327 is ready for commands when we see '>'
-
-/* UART receive buffer */
-#define BUFLEN 32
-char recv_buf[BUFLEN], buf_pos; 
+char recv_buf[BUFLEN+1], buf_pos; 
 /* The cheapest of non-blocking locks */
 #define buf_lock() RCIE=0;
 #define buf_unlock() RCIE=1;
@@ -21,6 +19,7 @@ void elm327_init(void) {
   BRG16 = 1; BRGH=1; SPBRGH = 0; SPBRG = BAUD_N; //Baud rate generator
   PEIE = 1; GIE = 1; RCIE = 1; //Use interrupts for receive
   buf_pos=0;
+  recv_buf[BUFLEN] = NULL; //Just in case
 }
 
 void uart_outc(char byte) { 
@@ -39,7 +38,11 @@ void elm_reset(void) {
   END_CMD();
 }
 
-void interrupt interrupt_handler(void) {
+/*Unfortunately, since the 887 has only one interrupt handler, we have this
+ * total hack of a solution to have this be a separate function. 
+ * Hopefully we don't blow up the stack
+ */
+void handle_elm_interrupt(void) {
   if(RCIF) {
     /* Very simple buffer, just circle back if overrun */
     recv_buf[buf_pos]=RCREG;  
@@ -93,4 +96,8 @@ void obd_connect(void) {
     buf_unlock();
     for(i=0;i<10;i++); //Wait for a new character
   }
+}
+
+/*Wait until a complete message is in the buffer*/
+void elm_wait_for_msg() {
 }
