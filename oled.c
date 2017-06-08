@@ -38,6 +38,7 @@
 char msg_scrolling = 0;//1 if a message is currently scrolling
 char scroll_pos; //Position of the scrolling message in the string
 char scroll_null; //Position of the NULL character in the scrolling message
+const char *scroll_str; //Maximum length of 32 for scrolling message
 
 /*Assuming 4MHz internal clock this will yield a timer 0 tick of 4us*/
 void timer0_init() {
@@ -185,8 +186,7 @@ void oled_init() {
  * one handler
  */
 void oled_scroll_line2(const char *s) {
-  char lineout[17], i;
-  oled_cursor(OLED_ROW2);
+  char i;
 
   //Check to see if the message fits within 16 chars, no need to scroll
   for(i=0; i<32; i++) {
@@ -197,13 +197,15 @@ void oled_scroll_line2(const char *s) {
 
   //Bail if the message is small enough
   if(scroll_null<=NUMCOLS) {
+    oled_cursor(OLED_ROW2);
     oled_outs(s);
     return;
   }
 
   //If we need to scroll
+  scroll_str = s;
+  scroll_pos=0;
   TMR1IE=1;
-  lineout[16] = NULL;
 }
 
 void oled_stop_scroll_line2(void) {
@@ -212,6 +214,14 @@ void oled_stop_scroll_line2(void) {
 }
 
 void handle_oled_interrupt(void) {
-  if(msg_scrolling) {
+  char i,pos;
+  if(msg_scrolling && TMR1IF) {
+    TMR1IF=0;
+    oled_cursor(OLED_ROW2);
+    //TODO: output from scroll_pos to 16, wrap around, calculate new scroll_pos
+    for(i=0;i<16;i++) {
+      oled_outc      
+    }
+    scroll_pos++;
   }
 }

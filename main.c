@@ -31,6 +31,8 @@ void main(void) {
   oled_init();
   oled_init(); //HACK for cold boots
   oled_clear();
+    oled_scroll_line2("Testing 1... 2... 3...");
+    while(1);
   elm327_init();
   while(1) {
     oled_scroll_line2("Testing 1... 2... 3...");
